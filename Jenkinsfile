@@ -13,19 +13,35 @@
 // The the built hypothesis/lms Docker image.
 def img
 
-node {
-    // The args that we'll pass to Docker run each time we run the Docker
-    // image.
-    runArgs = "-u root -e SITE_PACKAGES=true"
+// The args that we'll pass to Docker run each time we run the Docker
+// image.
+runArgs = "-u root -e SITE_PACKAGES=true"
 
+
+node {
+    checkout scm  // Checkout the commit that triggered this pipeline run.
+    buildDockerImage()
+    runStagesInParallel()
+    releaseToDockerHub()
+}
+deployToQAAndProd()
+
+
+/**
+ * Build the app's Docker image that everything will run in.
+ */
+def buildDockerImage() {
     stage("Build") {
-        // Checkout the commit that triggered this pipeline run.
-        checkout scm
         // Build the Docker image.
         img = buildApp(name: "hypothesis/lms")
     }
+}
 
-    // Run each of the stages in parallel.
+
+/**
+ * Run the tests, linter, coverage etc in parallel.
+ */
+def runStagesInParallel() {
     parallel failFast: true,
     "Formatting": {
         stage("Formatting") {
@@ -85,7 +101,13 @@ node {
             }
         }
     }
+}
 
+
+/**
+ * If this is the master branch then release the app to Docker Hub.
+ */
+def releaseToDockerHub() {
     onlyOnMaster {
         stage("release") {
             releaseApp(image: img)
@@ -93,7 +115,6 @@ node {
     }
 }
 
-deployToQAAndProd()
 
 /**
  * If this is the master branch then deploy the app to QA and prod.
@@ -114,12 +135,14 @@ def deployToQAAndProd() {
     }
 }
 
+
 /** Return the URL of the test database in the Postgres container. */
 def databaseUrl(postgresContainer) {
     hostIp = sh(script: "facter ipaddress_eth0", returnStdout: true).trim()
     containerPort = sh(script: "docker port ${postgresContainer.id} 5432 | cut -d: -f2", returnStdout: true).trim()
     return "postgresql://postgres@${hostIp}:${containerPort}/lmstest"
 }
+
 
 /**
  * Install some common system dependencies.
@@ -131,6 +154,7 @@ def installDeps() {
     sh "apk add build-base postgresql-dev python3-dev"
     sh "pip3 install -q tox>=3.8.0"
 }
+
 
 /** Run the given command. */
 def run(command) {
