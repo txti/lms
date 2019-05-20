@@ -17,12 +17,15 @@ def img
 // image.
 runArgs = "-u root -e SITE_PACKAGES=true"
 
-
-node {
-    checkout scm  // Checkout the commit that triggered this pipeline run.
-    buildDockerImage()
-    runStagesInParallel()
-    releaseToDockerHub()
+try {
+    node {
+        checkout scm  // Checkout the commit that triggered this pipeline run.
+        buildDockerImage()
+        runStagesInParallel()
+        releaseToDockerHub()
+    }
+} finally {
+    cleanWs()
 }
 deployToQAAndProd()
 
