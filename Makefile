@@ -19,6 +19,7 @@ help:
 	@echo "make checkdocstrings   Crash if building the docstrings fails"
 	@echo "make pip-compile       Compile requirements.in to requirements.txt"
 	@echo "make docker            Make the app's Docker image"
+	@echo "make docker-dev        Make the app's Docker image applying the dev configuration"
 	@echo "make run-docker        Run the app's Docker image locally"
 	@echo "make clean             Delete development artefacts (cached files, "
 	@echo "                       dependencies, etc)"
@@ -77,6 +78,10 @@ pip-compile:
 docker:
 	git archive --format=tar.gz HEAD | docker build -t hypothesis/lms:$(DOCKER_TAG) -
 
+.PHONY: docker
+docker-dev:
+	docker build -t hypothesis/lms:$(DOCKER_TAG) .
+
 .PHONY: run-docker
 run-docker:
 	# To run the Docker container locally, first build the Docker image using
@@ -85,7 +90,9 @@ run-docker:
 	docker run \
 		--net lms_default \
 		-e DATABASE_URL=postgresql://postgres@postgres/postgres \
-		-e FEATURE_FLAGS_COOKIE_SECRET \
+		-e GOOGLE_CLIENT_ID \
+		-e GOOGLE_DEVELOPER_KEY \
+		-e GOOGLE_APP_ID \
 		-e H_API_URL_PRIVATE \
 		-e H_API_URL_PUBLIC \
 		-e H_AUTHORITY \

@@ -31,6 +31,7 @@ RUN apk add --virtual build-deps \
     python3-dev \
   && pip3 install --no-cache-dir -U pip \
   && pip3 install --no-cache-dir -r requirements.txt \
+  && pip3 install --no-cache-dir pip-tools pyramid_debugtoolbar pyramid_ipython \
   && apk del build-deps
 
 # Copy collectd config
