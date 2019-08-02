@@ -120,6 +120,69 @@ class BasicLTILaunchViews:
         LMS, which passes it back to us in each launch request. All we have to
         do is pass the URL to Via.
         """
+        document_url = self.request.params["url"]
+
+        try:
+            lis_outcome_service_url = self.request.params["lis_outcome_service_url"]
+            lis_result_sourcedid = self.request.params["lis_result_sourcedid"]
+        except KeyError:
+            return {"via_url": via_url(self.request, self.request.params["url"])}
+        consumer_key = self.request.lti_user.oauth_consumer_key
+
+        from lms.models import ApplicationInstance
+
+        secret = (
+            self.request.db.query(ApplicationInstance)
+            .filter_by(consumer_key=consumer_key)
+            .one()
+            .shared_secret
+        )
+
+        from requests_oauthlib import OAuth1
+
+        oauth_client = OAuth1(
+            client_key=consumer_key,
+            client_secret=secret,
+            signature_method="HMAC-SHA1",
+            signature_type="auth_header",
+            force_include_body=True,
+        )
+
+        import requests
+        from urllib.parse import urlencode
+
+        lti_launch_url = (
+            f"http://localhost:8001/lti_launches?speedgrader=true&amp;url={document_url}&amp;grading_user={self.request.context.h_display_name}"
+        )
+        response = requests.post(
+            url=lis_outcome_service_url,
+            data=f"""<?xml version = "1.0" encoding = "UTF-8"?>
+    <imsx_POXEnvelopeRequest xmlns="http://www.imsglobal.org/services/ltiv1p1/xsd/imsoms_v1p0">
+    <imsx_POXHeader>
+        <imsx_POXRequestHeaderInfo>
+        <imsx_version>V1.0</imsx_version>
+        <imsx_messageIdentifier>999999123</imsx_messageIdentifier>
+        </imsx_POXRequestHeaderInfo>
+    </imsx_POXHeader>
+    <imsx_POXBody>
+        <replaceResultRequest>
+        <resultRecord>
+            <sourcedGUID>
+            <sourcedId>{ lis_result_sourcedid }</sourcedId>
+            </sourcedGUID>
+            <result>
+            <resultData>
+                <ltiLaunchUrl>{ lti_launch_url }</ltiLaunchUrl>
+            </resultData>
+            </result>
+        </resultRecord>
+        </replaceResultRequest>
+    </imsx_POXBody>
+    </imsx_POXEnvelopeRequest>""",
+            headers={"Content-Type": "application/xml"},
+            auth=oauth_client,
+        )
+
         return {"via_url": via_url(self.request, self.request.params["url"])}
 
     @view_config(
@@ -224,3 +287,25 @@ class BasicLTILaunchViews:
         )
 
         return {"via_url": via_url(self.request, document_url)}
+
+
+@view_defaults(
+    renderer="lms:templates/basic_lti_launch/basic_lti_launch.html.jinja2", request_method="POST",
+    request_param="speedgrader", route_name="lti_launches")
+class SpeedGraderViews:
+    def __init__(self, context, request):
+        self.context = context; self.request = request
+
+    @view_config(canvas_file=True, 
+                 renderer="lms:templates/basic_lti_launch/canvas_file_basic_lti_launch.html.jinja2")
+    def canvas_file_speedgrader_launch(self):
+        raise NotImplementedError()
+
+    @view_config(db_configured=True)
+    def db_configured_basic_lti_launch(self):
+        raise NotImplementedError()
+
+    @view_config(url_configured=True)
+    def url_configured_speedgrader_launch(self):
+        self.context.hypothesis_config["grading_user"] = self.request.params["grading_user"]
+        return {"via_url": via_url(self.request, self.request.params["url"])}

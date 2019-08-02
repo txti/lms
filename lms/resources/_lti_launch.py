@@ -33,6 +33,7 @@ class LTILaunchResource:
         self._authority = self._request.registry.settings["h_authority"]
         self._ai_getter = self._request.find_service(name="ai_getter")
         self._js_config = None
+        self._hypothesis_config = None
 
     @property
     def h_display_name(self):
@@ -190,33 +191,36 @@ class LTILaunchResource:
         if not self.provisioning_enabled:
             return {}
 
-        client_id = self._request.registry.settings["h_jwt_client_id"]
-        client_secret = self._request.registry.settings["h_jwt_client_secret"]
-        api_url = self._request.registry.settings["h_api_url_public"]
-        audience = urllib.parse.urlparse(api_url).hostname
+        if self._hypothesis_config is None:
+            client_id = self._request.registry.settings["h_jwt_client_id"]
+            client_secret = self._request.registry.settings["h_jwt_client_secret"]
+            api_url = self._request.registry.settings["h_api_url_public"]
+            audience = urllib.parse.urlparse(api_url).hostname
 
-        def grant_token():
-            now = datetime.datetime.utcnow()
-            claims = {
-                "aud": audience,
-                "iss": client_id,
-                "sub": self.h_userid,
-                "nbf": now,
-                "exp": now + datetime.timedelta(minutes=5),
-            }
-            return jwt.encode(claims, client_secret, algorithm="HS256")
-
-        return {
-            "services": [
-                {
-                    "apiUrl": api_url,
-                    "authority": self._authority,
-                    "enableShareLinks": False,
-                    "grantToken": grant_token().decode("utf-8"),
-                    "groups": [self.h_groupid],
+            def grant_token():
+                now = datetime.datetime.utcnow()
+                claims = {
+                    "aud": audience,
+                    "iss": client_id,
+                    "sub": self.h_userid,
+                    "nbf": now,
+                    "exp": now + datetime.timedelta(minutes=5),
                 }
-            ]
-        }
+                return jwt.encode(claims, client_secret, algorithm="HS256")
+
+            self._hypothesis_config = {
+                "services": [
+                    {
+                        "apiUrl": api_url,
+                        "authority": self._authority,
+                        "enableShareLinks": False,
+                        "grantToken": grant_token().decode("utf-8"),
+                        "groups": [self.h_groupid],
+                    }
+                ]
+            }
+
+        return self._hypothesis_config
 
     @property
     def rpc_server_config(self):
