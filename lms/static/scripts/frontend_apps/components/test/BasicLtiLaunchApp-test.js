@@ -1,4 +1,4 @@
-import { createElement } from 'preact';
+import { Fragment, createElement } from 'preact';
 import { mount } from 'enzyme';
 
 import { Config } from '../../config';
@@ -21,6 +21,12 @@ describe('BasicLtiLaunchApp', () => {
   let FakeAuthWindow;
   let FakeErrorDisplay;
   let fakeConfig;
+  // eslint-disable-next-line react/prop-types
+  const FakeDialog = ({ buttons, children }) => (
+    <Fragment>
+      {buttons} {children}
+    </Fragment>
+  );
 
   const renderLtiLaunchApp = (props = {}) => {
     return mount(
@@ -51,6 +57,7 @@ describe('BasicLtiLaunchApp', () => {
     // shallow rendering because the modern context API doesn't seem to work
     // with shallow rendering yet
     $imports.$mock({
+      './Dialog': FakeDialog,
       './ErrorDisplay': FakeErrorDisplay,
       './Spinner': FakeSpinner,
 

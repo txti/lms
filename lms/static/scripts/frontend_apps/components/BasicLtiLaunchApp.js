@@ -11,6 +11,7 @@ import AuthWindow from '../utils/AuthWindow';
 import { Config } from '../config';
 import { ApiError, apiCall } from '../utils/api';
 
+import Dialog from './Dialog';
 import Button from './Button';
 import ErrorDisplay from './ErrorDisplay';
 import Spinner from './Spinner';
@@ -160,33 +161,51 @@ export default function BasicLtiLaunchApp() {
         <Spinner className="BasicLtiLaunchApp__spinner" />
       )}
       {state === 'authorizing' && (
-        <div className="BasicLtiLaunchApp__form">
-          <h1 className="heading">Authorize Hypothesis</h1>
+        <Dialog
+          contentClass="BasicLtiLaunchApp__dialog"
+          title="Authorize Hypothesis"
+          buttons={[
+            <Button
+              onClick={authorizeAndFetchUrl}
+              className="BasicLtiLaunchApp__button"
+              label="Authorize"
+              key="authorize"
+            />,
+          ]}
+        >
           <p>Hypothesis needs your authorization to launch this assignment.</p>
-          <Button
-            onClick={authorizeAndFetchUrl}
-            className="BasicLtiLaunchApp__button"
-            label="Authorize"
-          />
-        </div>
+        </Dialog>
       )}
-      {state === 'error' && (
-        <div className="BasicLtiLaunchApp__form">
-          <h1 className="heading">Something went wrong</h1>
-          <ErrorDisplay
-            message="There was a problem loading this Hypothesis assignment"
-            error={error}
-          />
-          {failedAction === 'fetch-url' ? (
+      {state === 'error' && failedAction === 'fetch-url' && (
+        <Dialog
+          contentClass="BasicLtiLaunchApp__dialog"
+          title="Something went wrong"
+          buttons={[
             <Button
               onClick={authorizeAndFetchUrl}
               className="BasicLtiLaunchApp__button"
               label="Try again"
-            />
-          ) : (
-            <b>To fix this problem, try reloading the page.</b>
-          )}
-        </div>
+              key="retry"
+            />,
+          ]}
+        >
+          <ErrorDisplay
+            message="There was a problem fetching this Hypothesis assignment"
+            error={error}
+          />
+        </Dialog>
+      )}
+      {state === 'error' && failedAction === 'report-submission' && (
+        <Dialog
+          contentClass="BasicLtiLaunchApp__dialog"
+          title="Something went wrong"
+        >
+          <ErrorDisplay
+            message="There was a problem submitting this Hypothesis assignment"
+            error={error}
+          />
+          <b>To fix this problem, try reloading the page.</b>
+        </Dialog>
       )}
     </Fragment>
   );
