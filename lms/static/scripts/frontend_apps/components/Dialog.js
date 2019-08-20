@@ -4,7 +4,6 @@ import propTypes from 'prop-types';
 import classNames from 'classnames';
 
 import Button from './Button';
-import { zIndexScale } from '../utils/style';
 
 /**
  * Accessibility notes:
@@ -68,48 +67,41 @@ export default function Dialog({
 
   return (
     <div
+      className={classNames({
+        Dialog__background: true,
+        [contentClass]: true,
+      })}
       role="dialog"
       aria-labelledby="Dialog__title"
       onKeyDown={handleKey}
       tabIndex="0"
       ref={rootEl}
     >
-      <div
-        className="Dialog__background"
-        style={{ zIndex: zIndexScale.dialogBackground }}
-      />
-      <div className="Dialog__container" style={{ zIndex: zIndexScale.dialog }}>
-        <div
-          className={classNames({
-            Dialog__content: true,
-            [contentClass]: true,
-          })}
-        >
-          <h1 className="Dialog__title" id="Dialog__title">
-            {title}
-            <span className="u-stretch" />
-            {onCancel && (
-              <button
-                aria-label="Close"
-                className="Dialog__cancel-btn"
-                onClick={onCancel}
-              >
-                ✕
-              </button>
-            )}
-          </h1>
-          {children}
-          <div className="u-stretch" />
-          <div className="Dialog__actions">
-            {onCancel && (
-              <Button
-                className="Button--cancel"
-                onClick={onCancel}
-                label="Cancel"
-              />
-            )}
-            {buttons}
-          </div>
+      <div className="Dialog__content">
+        <h1 className="Dialog__title" id="Dialog__title">
+          {title}
+          <span className="u-stretch" />
+          {onCancel && (
+            <button
+              aria-label="Close"
+              className="Dialog__cancel-btn"
+              onClick={onCancel}
+            >
+              ✕
+            </button>
+          )}
+        </h1>
+        {children}
+        <div className="u-stretch" />
+        <div className="Dialog__actions">
+          {onCancel && (
+            <Button
+              className="Button--cancel"
+              onClick={onCancel}
+              label="Cancel"
+            />
+          )}
+          {buttons}
         </div>
       </div>
     </div>
