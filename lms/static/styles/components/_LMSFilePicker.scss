@@ -1,8 +1,8 @@
 .LMSFilePicker__dialog {
-  display: flex;
-  flex-direction: column;
-  max-height: 100vh;
-  max-width: 500px;
-  width: 80vw;
-  height: 400px;
+  /* Center the dialog over the content. */
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  left: 0;
+  top: 0;
 }

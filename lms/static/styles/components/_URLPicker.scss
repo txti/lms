@@ -1,7 +1,8 @@
 .URLPicker__dialog {
-  display: flex;
-  flex-direction: column;
-  width: 80vw;
-  max-width: 500px;
-  max-height: 300px;
+  /* Center the dialog over the content. */
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  left: 0;
+  top: 0;
 }
